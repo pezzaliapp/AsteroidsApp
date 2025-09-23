@@ -1,5 +1,5 @@
 // Simple offline cache — Asteroid PWA (MIT)
-const CACHE = 'asteroid-cache-v3';
+const CACHE = 'asteroid-cache-v1';
 const TO_CACHE = [
   './',
   './index.html',

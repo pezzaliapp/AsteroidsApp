@@ -10,6 +10,18 @@
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" href="icons/icon-192.png">
   <link rel="stylesheet" href="style.css">
+  <script>
+    // prevent iOS zoom on double-tap
+    document.addEventListener('touchend', function(event) {
+      var now = new Date().getTime();
+      var lastTouch = window.lastTouch || now + 1;
+      var delta = now - lastTouch;
+      window.lastTouch = now;
+      if (delta < 500 && delta > 0) {
+        event.preventDefault();
+      }
+    }, {passive:false});
+  </script>
 </head>
 <body>
   <div id="app">
@@ -17,7 +29,7 @@
     <div id="hud">
       <span id="score">00000</span>
       <span id="lives">❤❤❤</span>
-      <span id="fps">60</span>
+      <span id="fps">60</span><span id="best" aria-label="Record" title="Record">BEST 00000</span>
     </div>
 
     <!-- Touch controls -->
@@ -36,17 +48,8 @@
           <li>⌨️ <b>Tasti</b>: ← → ruota, ↑ spinta, Spazio spara</li>
           <li>📱 <b>Touch</b>: pulsanti in basso</li>
         </ul>
-        <button id="btnStart" type="button">Gioca</button>
-        <button id="btnScores" type="button" style="margin-left:8px">Punteggi</button>
+        <button id="btnStart">Gioca</button>
       </div>
-    </div>
-  </div>
-
-  <div id="scoresModal" class="overlay" style="display:none">
-    <div class="card">
-      <h2>🏆 Punteggi Alti</h2>
-      <ol id="scoresList" style="text-align:left"></ol>
-      <button id="btnCloseScores">Chiudi</button>
     </div>
   </div>
 
