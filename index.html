@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,height=device-height,initial-scale=1.0,maximum-scale=1.0,user-scalable=no" />
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#000000">
+  <title>Asteroid — pezzaliAPP PWA</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+  <link rel="stylesheet" href="style.css">
+  <script>
+    // prevent iOS zoom on double-tap
+    document.addEventListener('touchend', function(event) {
+      var now = new Date().getTime();
+      var lastTouch = window.lastTouch || now + 1;
+      var delta = now - lastTouch;
+      window.lastTouch = now;
+      if (delta < 500 && delta > 0) {
+        event.preventDefault();
+      }
+    }, {passive:false});
+  </script>
+</head>
+<body>
+  <div id="app">
+    <canvas id="game"></canvas>
+    <div id="hud">
+      <span id="score">00000</span>
+      <span id="lives">❤❤❤</span>
+      <span id="fps">60</span>
+    </div>
+
+    <!-- Touch controls -->
+    <div id="controls">
+      <div class="pad pad-left"  data-action="left"  aria-label="Ruota a sinistra">⟲</div>
+      <div class="pad pad-right" data-action="right" aria-label="Ruota a destra">⟳</div>
+      <div class="pad pad-thrust" data-action="thrust" aria-label="Spinta">▲</div>
+      <div class="pad pad-fire"   data-action="fire"   aria-label="Fuoco">•</div>
+    </div>
+
+    <div id="startScreen" class="overlay">
+      <div class="card">
+        <h1>ASTEROID</h1>
+        <p>Emulazione libera del classico Atari (1979), in versione <strong>PWA</strong> offline‑ready.</p>
+        <ul>
+          <li>⌨️ <b>Tasti</b>: ← → ruota, ↑ spinta, Spazio spara</li>
+          <li>📱 <b>Touch</b>: pulsanti in basso</li>
+        </ul>
+        <button id="btnStart">Gioca</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('sw.js');
+      });
+    }
+  </script>
+</body>
+</html>
