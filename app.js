@@ -46,7 +46,28 @@
   resize();
 
   // Game objects
-  class Ship{
+  class Particle{
+  constructor(x,y,ang,sp,life){
+    this.x=x; this.y=y;
+    this.vx=Math.cos(ang)*sp; this.vy=Math.sin(ang)*sp;
+    this.life=life; this.r=2*(window.devicePixelRatio||1);
+  }
+  update(dt,W,H){
+    const wrap=(v,max)=> (v<0? v+max : v%max);
+    this.x = wrap(this.x + this.vx*dt*60, W);
+    this.y = wrap(this.y + this.vy*dt*60, H);
+    this.life -= dt;
+  }
+  draw(ctx){
+    ctx.globalAlpha = Math.max(0, this.life*1.5);
+    ctx.beginPath();
+    ctx.arc(this.x,this.y,this.r,0,Math.PI*2);
+    ctx.fill();
+    ctx.globalAlpha = 1;
+  }
+}
+
+class Ship{
     constructor(){
       this.x = W/2; this.y = H/2;
       this.r = 14 * DPR;
@@ -152,11 +173,12 @@
   }
 
   // Game state
-  let ship, asteroids, bullets, score, lives, shootCooldown;
+  let ship, asteroids, bullets, particles, score, lives, shootCooldown;
   function newGame(){
     ship = new Ship();
     asteroids = [];
     bullets = [];
+    particles = [];
     score = 0;
     lives = 3;
     shootCooldown = 0;
@@ -174,7 +196,16 @@
     }
   }
 
-  function splitAsteroid(ast, idx){
+  function spawnExplosion(x,y,count=14){
+  for(let i=0;i<count;i++){
+    const a = Math.random()*Math.PI*2;
+    const sp = (0.8 + Math.random()*3.5) * (window.devicePixelRatio||1);
+    const life = 0.3 + Math.random()*0.7;
+    particles.push(new Particle(x,y,a,sp,life));
+  }
+}
+
+function splitAsteroid(ast, idx){
     const r = ast.r;
     if(r > 22*DPR){
       const count = 2;
@@ -190,6 +221,7 @@
   function explodeShip(){
     if(ship.inv > 0) return;
     lives--;
+    spawnExplosion(ship.x, ship.y, 20);
     ship = new Ship();
     ship.inv = 2.0; // invincibility on respawn
   }
@@ -268,6 +300,8 @@
     bullets.forEach(b=>b.update(dt));
     bullets = bullets.filter(b=>b.life>0);
     asteroids.forEach(a=>a.update(dt));
+    particles.forEach(p=>p.update(dt, W, H));
+    particles = particles.filter(p=>p.life>0);
 
     // collisions bullets-asteroids
     for(let i=asteroids.length-1;i>=0;i--){
@@ -277,6 +311,7 @@
         if(dist2(a.x, a.y, b.x, b.y) < (a.r+b.r)*(a.r+b.r)){
           bullets.splice(j,1);
           splitAsteroid(a, i);
+          spawnExplosion(a.x,a.y,12);
           score += 10;
           break;
         }
@@ -313,6 +348,7 @@
 
     asteroids.forEach(a=>a.draw());
     ship.draw();
+    particles.forEach(p=>p.draw(ctx));
     bullets.forEach(b=>b.draw());
     ctx.restore();
 
