@@ -247,7 +247,10 @@
     if(keys.left || touchActive.left) ship.rot = -rotSpeed;
     if(keys.right || touchActive.right) ship.rot = rotSpeed;
     if(keys.thrust || touchActive.thrust) ship.thrusting = true;
-    if(keys.fire){ fire(); keys.fire = false; }
+    if(keys.fire || touchActive.fire){ fire(); }
+
+    // cooldown timer
+    shootCooldown = Math.max(0, shootCooldown - dt);
 
     // update
     ship.update(dt);
