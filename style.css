@@ -23,3 +23,10 @@ html,body,#app{ height:100%; margin:0; background:var(--bg); color:var(--fg); fo
 ::selection{ background:transparent; }
 
 #scoresModal{ z-index:6; }
+
+
+/* Show touch controls only on touch devices */
+#controls{ display:none; }
+@media (hover: none) and (pointer: coarse){
+  #controls{ display:grid; }
+}

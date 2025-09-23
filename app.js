@@ -205,7 +205,7 @@
       this.x = Math.random() < 0.5 ? -40*DPR : W + 40*DPR;
       this.vx = this.x < 0 ? 2.0*DPR : -2.0*DPR;
       this.cool = 1.0;
-      this.alive = True = true;
+      this.alive = true;
       this.shootRate = 1.2; // seconds
       this.hp = 3;
     }
