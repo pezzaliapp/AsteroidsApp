@@ -18,3 +18,11 @@ Emulazione libera di **Asteroids (Atari, 1979)** in HTML/CSS/JS.
 - Limitazione FPS su device retina (DPR ≤ 2) per non stressare la GPU.
 
 © 2025 pezzaliAPP — MIT License
+
+
+## Novità v2
+- **UFO** con colpi nemici e bonus +100 alla distruzione
+- **Suoni WebAudio** (no file esterni): sparo, spinta, esplosione, UFO
+- **Particles** per esplosioni
+- **Fixed timestep 60 Hz** per fisica stabile
+- **High Scores** (localStorage, top 10) con pannello dedicato
