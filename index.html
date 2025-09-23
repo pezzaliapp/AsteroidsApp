@@ -10,18 +10,6 @@
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" href="icons/icon-192.png">
   <link rel="stylesheet" href="style.css">
-  <script>
-    // prevent iOS zoom on double-tap
-    document.addEventListener('touchend', function(event) {
-      var now = new Date().getTime();
-      var lastTouch = window.lastTouch || now + 1;
-      var delta = now - lastTouch;
-      window.lastTouch = now;
-      if (delta < 500 && delta > 0) {
-        event.preventDefault();
-      }
-    }, {passive:false});
-  </script>
 </head>
 <body>
   <div id="app">
@@ -48,8 +36,8 @@
           <li>⌨️ <b>Tasti</b>: ← → ruota, ↑ spinta, Spazio spara</li>
           <li>📱 <b>Touch</b>: pulsanti in basso</li>
         </ul>
-        <button id="btnStart">Gioca</button>
-        <button id="btnScores" style="margin-left:8px">Punteggi</button>
+        <button id="btnStart" type="button">Gioca</button>
+        <button id="btnScores" type="button" style="margin-left:8px">Punteggi</button>
       </div>
     </div>
   </div>

@@ -1,5 +1,8 @@
 /* Asteroid — pezzaliAPP PWA (Canvas 2D) — MIT License */
 (() => {
+  document.addEventListener('DOMContentLoaded', ()=>{
+    // no-op; ensures DOM ready before binding
+  });
   const canvas = document.getElementById('game');
   const ctx = canvas.getContext('2d');
   const scoreEl = document.getElementById('score');
@@ -346,6 +349,18 @@
     touchActive[action] = on;
     if(on && action==='fire') fire();
   }
+
+  // Pointer events for on-screen pads (work on mouse + touch)
+  document.querySelectorAll('.pad').forEach(el=>{
+    const action = el.getAttribute('data-action');
+    const down = (ev)=>{ ev.preventDefault(); setTouch(action,true); if(el.setPointerCapture && ev.pointerId!==undefined) el.setPointerCapture(ev.pointerId); };
+    const up   = (ev)=>{ ev.preventDefault(); setTouch(action,false); };
+    el.addEventListener('pointerdown', down);
+    el.addEventListener('pointerup', up);
+    el.addEventListener('pointercancel', up);
+    el.addEventListener('pointerleave', up);
+  });
+
   document.querySelectorAll('.pad').forEach(el=>{
     const action = el.getAttribute('data-action');
     const start = (ev)=>{ ev.preventDefault(); setTouch(action,true); };
