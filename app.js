@@ -9,18 +9,40 @@
   const btnStart = document.getElementById('btnStart');
   const DPR = Math.max(1, Math.min(2, window.devicePixelRatio || 1)); // cap at 2 for performance
 
-  // Best score (localStorage, non invasivo)
-  function loadBest(){
-    try { return parseInt(localStorage.getItem('asteroid-best')||'0',10) || 0; } catch(e){ return 0; }
-  }
-  function saveBest(v){
-    try {
-      const best = loadBest();
-      if(v > best) localStorage.setItem('asteroid-best', String(v));
-    } catch(e){}
-  }
+  // --- Audio minimale (WebAudio) ---
+  const Audio = {
+    ctx: null,
+    out: null,
+    enabled: true,
+    init(){
+      if(this.ctx) return;
+      try{
+        const Ctx = window.AudioContext || window.webkitAudioContext;
+        this.ctx = new Ctx();
+        this.out = this.ctx.createGain();
+        this.out.gain.value = 0.08;
+        this.out.connect(this.ctx.destination);
+      }catch(e){ this.enabled = false; }
+    },
+    tone(freq=440, dur=0.08, type='square'){
+      if(!this.enabled || !this.ctx) return;
+      const t = this.ctx.currentTime;
+      const osc = this.ctx.createOscillator();
+      const g = this.ctx.createGain();
+      osc.type = type; osc.frequency.setValueAtTime(freq, t);
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.exponentialRampToValueAtTime(1.0, t+0.01);
+      g.gain.exponentialRampToValueAtTime(0.0001, t+dur);
+      osc.connect(g); g.connect(this.out);
+      osc.start(t); osc.stop(t+dur);
+    },
+    shoot(){ this.tone(880, 0.05, 'square'); },
+    thrust(){ this.tone(140, 0.06, 'sawtooth'); },
+    explode(){ this.tone(90, 0.22, 'triangle'); }
+  };
 
   let W = 0, H = 0;
+  let thrustTick = 0;
   let running = false;
   let last = 0, frames = 0, fps = 60, fpsTimer = 0;
 
@@ -46,28 +68,7 @@
   resize();
 
   // Game objects
-  class Particle{
-  constructor(x,y,ang,sp,life){
-    this.x=x; this.y=y;
-    this.vx=Math.cos(ang)*sp; this.vy=Math.sin(ang)*sp;
-    this.life=life; this.r=2*(window.devicePixelRatio||1);
-  }
-  update(dt,W,H){
-    const wrap=(v,max)=> (v<0? v+max : v%max);
-    this.x = wrap(this.x + this.vx*dt*60, W);
-    this.y = wrap(this.y + this.vy*dt*60, H);
-    this.life -= dt;
-  }
-  draw(ctx){
-    ctx.globalAlpha = Math.max(0, this.life*1.5);
-    ctx.beginPath();
-    ctx.arc(this.x,this.y,this.r,0,Math.PI*2);
-    ctx.fill();
-    ctx.globalAlpha = 1;
-  }
-}
-
-class Ship{
+  class Ship{
     constructor(){
       this.x = W/2; this.y = H/2;
       this.r = 14 * DPR;
@@ -173,12 +174,11 @@ class Ship{
   }
 
   // Game state
-  let ship, asteroids, bullets, particles, score, lives, shootCooldown;
+  let ship, asteroids, bullets, score, lives, shootCooldown;
   function newGame(){
     ship = new Ship();
     asteroids = [];
     bullets = [];
-    particles = [];
     score = 0;
     lives = 3;
     shootCooldown = 0;
@@ -196,16 +196,7 @@ class Ship{
     }
   }
 
-  function spawnExplosion(x,y,count=14){
-  for(let i=0;i<count;i++){
-    const a = Math.random()*Math.PI*2;
-    const sp = (0.8 + Math.random()*3.5) * (window.devicePixelRatio||1);
-    const life = 0.3 + Math.random()*0.7;
-    particles.push(new Particle(x,y,a,sp,life));
-  }
-}
-
-function splitAsteroid(ast, idx){
+  function splitAsteroid(ast, idx){
     const r = ast.r;
     if(r > 22*DPR){
       const count = 2;
@@ -221,7 +212,6 @@ function splitAsteroid(ast, idx){
   function explodeShip(){
     if(ship.inv > 0) return;
     lives--;
-    spawnExplosion(ship.x, ship.y, 20);
     ship = new Ship();
     ship.inv = 2.0; // invincibility on respawn
   }
@@ -234,9 +224,16 @@ function splitAsteroid(ast, idx){
       ship.a
     ));
     shootCooldown = 0.18;
+    try{ Audio.shoot(); }catch(e){}
   }
 
   // input
+  if(!window.__audioInitFallback){
+  const one = ()=>{ try{ Audio.init(); }catch(e){}; window.removeEventListener('keydown', one); window.removeEventListener('touchstart', one); window.__audioInitFallback=true; };
+  window.addEventListener('keydown', one, {once:true});
+  window.addEventListener('touchstart', one, {once:true, passive:true});
+}
+
   window.addEventListener('keydown', e=>{
     if(e.code === 'ArrowLeft') keys.left = true;
     if(e.code === 'ArrowRight') keys.right = true;
@@ -267,7 +264,7 @@ function splitAsteroid(ast, idx){
     el.addEventListener('mouseleave', end);
   });
 
-  btnStart.addEventListener('click', ()=>{
+  btnStart.addEventListener('click', ()=>{ Audio.init();
     startScreen.style.display = 'none';
     running = true;
     last = performance.now();
@@ -289,7 +286,7 @@ function splitAsteroid(ast, idx){
     const rotSpeed = 3.0; // rad/s
     if(keys.left || touchActive.left) ship.rot = -rotSpeed;
     if(keys.right || touchActive.right) ship.rot = rotSpeed;
-    if(keys.thrust || touchActive.thrust) ship.thrusting = true;
+    if(keys.thrust || touchActive.thrust){ ship.thrusting = true; thrustTick -= dt; if(thrustTick<=0){ try{ Audio.thrust(); }catch(e){} thrustTick = 0.12; } }
     if(keys.fire || touchActive.fire){ fire(); }
 
     // cooldown timer
@@ -300,8 +297,6 @@ function splitAsteroid(ast, idx){
     bullets.forEach(b=>b.update(dt));
     bullets = bullets.filter(b=>b.life>0);
     asteroids.forEach(a=>a.update(dt));
-    particles.forEach(p=>p.update(dt, W, H));
-    particles = particles.filter(p=>p.life>0);
 
     // collisions bullets-asteroids
     for(let i=asteroids.length-1;i>=0;i--){
@@ -311,7 +306,6 @@ function splitAsteroid(ast, idx){
         if(dist2(a.x, a.y, b.x, b.y) < (a.r+b.r)*(a.r+b.r)){
           bullets.splice(j,1);
           splitAsteroid(a, i);
-          spawnExplosion(a.x,a.y,12);
           score += 10;
           break;
         }
@@ -348,7 +342,6 @@ function splitAsteroid(ast, idx){
 
     asteroids.forEach(a=>a.draw());
     ship.draw();
-    particles.forEach(p=>p.draw(ctx));
     bullets.forEach(b=>b.draw());
     ctx.restore();
 
@@ -356,16 +349,11 @@ function splitAsteroid(ast, idx){
     scoreEl.textContent = String(score).padStart(5,'0');
     livesEl.textContent = '❤'.repeat(Math.max(0,lives));
     fpsEl.textContent = fps;
-    const best = loadBest();
-    const bestEl = document.getElementById('best');
-    if(bestEl) bestEl.textContent = 'BEST ' + String(Math.max(best, score)).padStart(5,'0');
 
     // game over
     if(lives <= 0){
       running = false;
-      saveBest(score);
-      const bestNow = loadBest();
-      startScreen.querySelector('p').innerHTML = `Punteggio: <b>${score}</b> — Record: <b>${bestNow}</b>`;
+      startScreen.querySelector('p').innerHTML = `Punteggio: <b>${score}</b>`;
       startScreen.style.display = 'flex';
       btnStart.textContent = 'Ricomincia';
       newGame();
