@@ -120,10 +120,11 @@
   }
 
   class Bullet{
-    constructor(x,y,a, speed=7.0 * DPR, life=0.9){
+    constructor(x,y,a){
+      const sp = 7.0 * DPR;
       this.x = x; this.y = y;
-      this.vx = Math.cos(a)*speed; this.vy = Math.sin(a)*speed;
-      this.life = life;
+      this.vx = Math.cos(a)*sp; this.vy = Math.sin(a)*sp;
+      this.life = 0.9;
       this.r = 2 * DPR;
     }
     update(dt){
@@ -186,7 +187,7 @@
   }
 
   // Game state
-  let ship, asteroids, bullets, score, lives, shootCooldown;
+  let ship, asteroids, bullets, score, lives, shootCooldown, ufo, ufoTimer;
   function newGame(){
     ship = new Ship();
     asteroids = [];
@@ -194,7 +195,6 @@
     score = 0;
     lives = 3;
     shootCooldown = 0;
-    ufo = null; ufoTimer = 5.0;
     makeAsteroids(4);
   }
 
@@ -319,8 +319,6 @@
         if(dist2(ufo.x,ufo.y,b.x,b.y) < (ufo.r+b.r)*(ufo.r+b.r)){
           bullets.splice(j,1);
           ufo.alive = false;
-          spawnExplosion(ufo.x,ufo.y,16);
-          try{ Audio.explode(); }catch(e){}
           score += 100;
           break;
         }
